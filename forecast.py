@@ -8,7 +8,9 @@ import requests
 from sklearn.linear_model import LinearRegression
 
 import pickle
+import logging
 
+logger = logging.getLogger(__name__)
 key = 'H3CFB251KRDPFS4KR084UEQMP'
 database_file = "./resources/database.sqlite"
 pkl_filename = "./resources/linearregression.pkl"
@@ -55,20 +57,41 @@ def predict(accountId, futureDate):
 
     campaign_select = pd.read_sql_query("select accountId, adgroupId, campaignId, keywordId, '"+futureDate+"' as date from user_history where accountId = '"+accountId+"'group by accountId, adgroupId, campaignId, keywordId;", conn)
     
-    r = requests.get('https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/weatherdata/history?&aggregateHours=24&startDateTime='+futureDate+'T00:00:00&endDateTime='+futureDate+'T00:00:00&unitGroup=uk&contentType=csv&dayStartTime=0:0:00&dayEndTime=0:0:00&location=Gustav%20Adolfs%20torg,%20Stockholm&key='+key)
+    weather_url = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/weatherdata/history?&aggregateHours=24&startDateTime='+futureDate+'T00:00:00&endDateTime='+futureDate+'T00:00:00&unitGroup=uk&contentType=csv&dayStartTime=0:0:00&dayEndTime=0:0:00&location=Gustav%20Adolfs%20torg,%20Stockholm&key='+key
+    
+    logger.info("Requesting weather URL to weather visual crossing...")
+    r = requests.get(weather_url)
+
+    logger.info("Weather Visual Crossing response:")
+    logger.info(r.text)
+
+    logger.info("Parsing Weather data...")
     weather_text = StringIO(r.text)
     weather_frame = pd.read_csv(weather_text, sep=",")
+
+    logger.info("Weather Visual Crossing Dataframe:")
+    logger.info(weather_frame)
+
+    logger.info("Joining user history and weather data...")
     weather_join_frame = pd.DataFrame({'date': [futureDate]}, index=[0])
     weather_frame = pd.concat([weather_frame, weather_join_frame], axis=1)
         
-    weather_select = weather_frame[['date','Precipitation', 'Wind Gust',	'Cloud Cover',	'Relative Humidity']]
+    try:
+        weather_select = weather_frame[['date','Precipitation', 'Wind Gust',	'Cloud Cover',	'Relative Humidity']]
+    except:
+        logger.error("The API failed to obtain Weather information from the Visual Crossing's weather forecast API.")
     
     input_frame = pd.merge(campaign_select, weather_select, on='date')
     input_frame.fillna(0, inplace=True)
     
+    logger.info("Generating input frame...")
     input_frame = input_frame[['accountId', 'adgroupId', 'campaignId', 'keywordId', 'Precipitation', 'Wind Gust',	'Cloud Cover',	'Relative Humidity']]
     
+    logger.info("Generating prediction frame...")
     campaign_predicts =  pd.DataFrame(model.predict(input_frame))
     
+    logger.info("Joining input frame and prediction frame...")
     campaign_predicts = pd.concat([campaign_select, campaign_predicts], axis=1)
+
+    logger.info("Generating results...")
     return campaign_predicts
