@@ -29,9 +29,11 @@
   <div class="jumbotron">
     <h1 class="display-4">How is the weather going to be ?</h1>
     <p class="lead">The purpose of this application is to, given a sample of weather forecast data, estimate how the weather is going to be in a given date.</p>
-    <input type="text" class="btn" alt="Account id"/>
-    <input type="date" class="btn" alt="Future date"/>
-    <button type="button" class="btn btn-secondary">Check</button>
+    <form action="./api">
+      <input type="text" class="btn" alt="Account id" name="accountId"/>
+      <input type="date" class="btn" alt="Future date" name="futureDate"/>
+      <button type="submit" class="btn btn-secondary">Check</button>
+    </form>
     <hr class="my-4"/>
     <p>© 2020 Italo Macedo. All rights reserved</p>
   </div>

@@ -10,14 +10,10 @@ from sklearn.linear_model import LinearRegression
 import pickle
 
 key = 'H3CFB251KRDPFS4KR084UEQMP'
-accountId = '1'
-futureDate = '2020-08-26'
 database_file = "./resources/database.sqlite"
 pkl_filename = "./resources/linearregression.pkl"
 
 def loadModel(conn):
-    
-
     try:
         with open(pkl_filename, 'rb') as file:
             pickle_model = pickle.load(file)
@@ -46,7 +42,7 @@ def loadModel(conn):
 
         return pickle_model
 
-def main():
+def predict(accountId, futureDate):
     conn = None
 
     try:
@@ -75,8 +71,4 @@ def main():
     campaign_predicts =  pd.DataFrame(model.predict(input_frame))
     
     campaign_predicts = pd.concat([campaign_select, campaign_predicts], axis=1)
-    print(campaign_predicts)
-
-
-if __name__ == '__main__':
-    main()
+    return campaign_predicts
